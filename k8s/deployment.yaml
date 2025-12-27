@@ -1,0 +1,88 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: k8s-job-notify
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-job-notify
+  namespace: k8s-job-notify
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: k8s-job-notify
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k8s-job-notify
+subjects:
+  - kind: ServiceAccount
+    name: k8s-job-notify
+    namespace: k8s-job-notify
+roleRef:
+  kind: ClusterRole
+  name: k8s-job-notify
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-job-notify
+  namespace: k8s-job-notify
+  labels:
+    app: k8s-job-notify
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-job-notify
+  template:
+    metadata:
+      labels:
+        app: k8s-job-notify
+    spec:
+      serviceAccountName: k8s-job-notify
+      containers:
+        - name: k8s-job-notify
+          image: k8s-job-notify:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: slack-webhook
+                  key: webhook-url
+            - name: NAMESPACE
+              value: "" # Empty for all namespaces
+            - name: IN_CLUSTER
+              value: "true"
+            - name: RESYNC_PERIOD
+              value: "30"
+            - name: NOTIFICATION_LEVEL
+              value: "all" # "all" or "failed"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities:
+              drop:
+                - ALL
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault

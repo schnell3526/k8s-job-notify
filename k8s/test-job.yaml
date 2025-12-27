@@ -1,0 +1,32 @@
+---
+# 成功する Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-job-success
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - name: test
+          image: busybox
+          command: ["sh", "-c", "echo 'Job completed successfully!' && sleep 5"]
+      restartPolicy: Never
+  backoffLimit: 1
+---
+# 失敗する Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-job-failure
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - name: test
+          image: busybox
+          command: ["sh", "-c", "echo 'Job will fail!' && exit 1"]
+      restartPolicy: Never
+  backoffLimit: 1

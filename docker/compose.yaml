@@ -1,0 +1,24 @@
+services:
+  k8s-job-notify:
+    profiles:
+      - prod
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: k8s-job-notify:latest
+    container_name: k8s-job-notify
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Tokyo
+    # volumes:
+    #   - ~/.kube/config:/home/nonroot/.kube/config:ro
+
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dev
+    volumes:
+      - ..:/workspace:cached
+      - ~/.claude:/home/vscode/.claude
+    command: sleep infinity
